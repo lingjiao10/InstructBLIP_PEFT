@@ -634,6 +634,7 @@ class IconQATask(VQATask):
 
     def after_evaluation(self, val_result, split_name, **kwargs):
         # print(val_result[:5])
+        print("------------after_evaluation-----1")
         result_file = self.save_result(
             val_result,
             result_dir=registry.get_path("result_dir"),

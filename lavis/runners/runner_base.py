@@ -446,7 +446,9 @@ class RunnerBase:
                 break
         # testing phase <- 이걸 위로 올리면 test set metric 확인 가능
         test_epoch = "best" if len(self.valid_splits) > 0 else cur_epoch
+        print("---------testing phase--------")
         self.evaluate(cur_epoch=test_epoch, skip_reload=self.evaluate_only)
+        print("---------end testing--------")
 
         total_time = time.time() - start_time
         total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -457,6 +459,7 @@ class RunnerBase:
 
         if len(self.test_splits) > 0:
             for split_name in self.test_splits:
+                print("split_name: ", split_name)
                 test_logs[split_name] = self.eval_epoch(
                     split_name=split_name, cur_epoch=cur_epoch, skip_reload=skip_reload
                 )
@@ -506,6 +509,7 @@ class RunnerBase:
             dataset=self.datasets[split_name],
         )
         results = self.task.evaluation(model, data_loader)
+        print("----------results length:",  len(results))
 
         if results is not None:
             return self.task.after_evaluation(

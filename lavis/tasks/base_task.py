@@ -102,9 +102,14 @@ class BaseTask:
             eval_output = self.valid_step(model=model, samples=samples)
             results.extend(eval_output)
 
-        if is_dist_avail_and_initialized():
-            dist.barrier()
+        print("--------------evaluation-------1")
 
+        if is_dist_avail_and_initialized():
+            print("--------------evaluation-------2 dist_avail_and_initialized")
+            dist.barrier()
+            print("--------------evaluation-------3 after dist.barrier()")
+
+        print("--------------evaluation-------4 before return results")
         return results
 
     def train_epoch(
@@ -264,10 +269,12 @@ class BaseTask:
         final_result_file = os.path.join(result_dir, "%s.json" % filename)
 
         json.dump(result, open(result_file, "w"))
+        print("------------save_result-----1")
 
         if is_dist_avail_and_initialized():
             dist.barrier()
 
+        print("------------save_result-----2")
         if is_main_process():
             logging.warning("rank %d starts merging results." % get_rank())
             # combine results from all processes

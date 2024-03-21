@@ -144,6 +144,9 @@ class Blip2VicunaInstructQformerLLMLoRA(Blip2Base):
             # bias=training_args.lora_bias,
             task_type="CAUSAL_LM",
         )
+        if(lora_config.lora_dropout == None):
+            lora_config.lora_dropout = 0.0
+        print("lora_config: \n", lora_config)
         self.llm_model = get_peft_model(self.llm_model, lora_config)
         self.llm_model.print_trainable_parameters()
 

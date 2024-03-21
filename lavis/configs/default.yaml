@@ -7,4 +7,5 @@ env:
   # For default users
   # cache_root: "cache"
   # For internal use with persistent storage
-  cache_root: "lavis" #"/export/home/.cache/lavis"
+  # cache_root: "lavis" #"/export/home/.cache/lavis"
+  cache_root: "/home/h3c/wangcong/.cache/lavis"
