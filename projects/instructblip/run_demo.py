@@ -1,12 +1,17 @@
 import gradio as gr
-from lavis.models import load_model_and_preprocess
 import torch
 import argparse
+from omegaconf import OmegaConf
+from lavis.common.config import Config
+from lavis.common.registry import registry
+from lavis.models import load_model_and_preprocess
+from lavis.models import load_preprocess
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Demo")
     parser.add_argument("--model-name", default="blip2_vicuna_instruct")
     parser.add_argument("--model-type", default="vicuna7b")
+    parser.add_argument("--model-ftckp", default="")
     args = parser.parse_args()
 
     image_input = gr.Image(type="pil")
@@ -79,12 +84,47 @@ if __name__ == '__main__':
 
     print('Loading model...')
 
-    model, vis_processors, _ = load_model_and_preprocess(
-        name=args.model_name,
-        model_type=args.model_type,
-        is_eval=True,
-        device=device,
-    )
+    if(args.model_ftckp==""):
+        model, vis_processors, _ = load_model_and_preprocess(
+            name=args.model_name,
+            model_type=args.model_type,
+            is_eval=True,
+            device=device,
+        )
+    else:
+    # if args.model_ftckp is not "":
+        #read cfg 
+        # cfg = Config(args.cfg)
+
+
+        checkpoint_path = args.model_ftckp
+        # model_config = cfg.model_cfg
+
+        
+
+        print("Loading checkpoint from {}.".format(checkpoint_path))
+        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        cfg = OmegaConf.create(checkpoint["config"])
+        model_config = Config.build_model_config(cfg).model
+        print("--------------model_config")
+        print(OmegaConf.to_yaml(model_config))
+        model_cls = registry.get_model_class(model_config.arch)
+        model = model_cls.from_config(model_config)
+
+        try:
+            model.load_state_dict(checkpoint["model"])
+        except RuntimeError as e:
+            print(
+                """
+                Key mismatch when loading checkpoint. This is expected if only part of the model is saved.
+                Trying to load the model with strict=False.
+                """
+            )
+            model.load_state_dict(checkpoint["model"], strict=False)
+
+        preprocess_cfg = cfg.preprocess
+        vis_processors, txt_processors = load_preprocess(preprocess_cfg)
+        model.to(device)
 
     print('Loading model done!')
 
@@ -109,11 +149,15 @@ if __name__ == '__main__':
             use_nucleus_sampling=use_nucleus_sampling,
         )
 
-        return output[0]
+        print("model output: ", output)
+        if(output[0]!=''):
+            return output[0]
+        else:
+            return "Sorry, I don't know the answer."
 
     gr.Interface(
         fn=inference,
         inputs=[image_input, prompt_textbox, min_len, max_len, beam_size, len_penalty, repetition_penalty, top_p, sampling],
         outputs="text",
         allow_flagging="never",
-    ).launch()
+    ).launch(server_name="192.168.30.153")
